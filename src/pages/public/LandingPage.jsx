@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   CalendarCheck, Stethoscope, Clock, MapPin,
-  ArrowRight, Star, Users, HeartPulse, Search,
+  ArrowRight, Star, Users, HeartPulse, Search, ClipboardList,
 } from 'lucide-react';
 
 const features = [
@@ -240,6 +240,13 @@ export default function LandingPage() {
             >
               <Users className="h-4 w-4" />
               Join as a doctor
+            </Link>
+            <Link
+              to="/register/assistant"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/40 bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20"
+            >
+              <ClipboardList className="h-4 w-4" />
+              Join as an assistant
             </Link>
           </div>
         </div>

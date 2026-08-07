@@ -45,13 +45,16 @@ export async function deleteUser(id) {
   return data;
 }
 
-export async function assignAssistant({ id, doctorId }) {
-  const { data } = await axiosInstance.patch(`/admin/assistants/${id}/assign`, { doctorId });
+export async function getAssistants(params) {
+  const { data } = await axiosInstance.get('/admin/assistants', { params });
   return data;
 }
 
-export async function removeAssistant(id) {
-  const { data } = await axiosInstance.patch(`/admin/assistants/${id}/remove`);
+export async function assignAssistantDoctor(assistantId, doctorId) {
+  const { data } = await axiosInstance.patch(
+    `/admin/assistants/${assistantId}/assign-doctor`,
+    { doctorId },
+  );
   return data;
 }
 

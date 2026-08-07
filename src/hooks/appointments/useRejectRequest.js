@@ -14,6 +14,10 @@ export function useRejectRequest() {
       toast.success('Appointment request rejected.');
     },
     onError: (error) => {
+      if (error.response?.status === 403) {
+        toast.error("This doesn't belong to your assigned doctor.");
+        return;
+      }
       handleApiError(error, { fallback: 'Could not reject the request.' });
     },
   });

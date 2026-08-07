@@ -13,6 +13,10 @@ export function useCancelByStaff() {
       toast.success('Appointment cancelled.');
     },
     onError: (error) => {
+      if (error.response?.status === 403) {
+        toast.error("This doesn't belong to your assigned doctor.");
+        return;
+      }
       handleApiError(error, { fallback: 'Could not cancel the appointment.' });
     },
   });

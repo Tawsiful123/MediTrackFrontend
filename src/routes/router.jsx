@@ -11,6 +11,7 @@ import LandingPage from '@/pages/public/LandingPage';
 import LoginPage from '@/pages/public/LoginPage';
 import RegisterPatientPage from '@/pages/public/RegisterPatientPage';
 import RegisterDoctorPage from '@/pages/public/RegisterDoctorPage';
+import RegisterAssistantPage from '@/pages/public/RegisterAssistantPage';
 import ForgotPasswordPage from '@/pages/public/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/public/ResetPasswordPage';
 import FindDoctorsPage from '@/pages/public/FindDoctorsPage';
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
       { path: '/login', element: <LoginPage /> },
       { path: '/register/patient', element: <RegisterPatientPage /> },
       { path: '/register/doctor', element: <RegisterDoctorPage /> },
+      { path: '/register/assistant', element: <RegisterAssistantPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/reset-password', element: <ResetPasswordPage /> },
       { path: '/doctors', element: <FindDoctorsPage /> },

@@ -10,9 +10,10 @@ import EmptyState from '@/components/common/EmptyState';
 import { useAssistantDashboard } from '@/hooks/assistant/useAssistantDashboard';
 import { useAssignedDoctor } from '@/hooks/assistant/useAssignedDoctor';
 import { useAppointmentRequests } from '@/hooks/appointments/useAppointmentRequests';
+import { getErrorStatus } from '@/utils/getErrorMessage';
 
 export default function AssistantDashboardPage() {
-  const { data, isLoading, isError, refetch } = useAssistantDashboard();
+  const { data, isLoading, isError, error, refetch } = useAssistantDashboard();
   const { data: doctorData, isLoading: doctorLoading } = useAssignedDoctor();
   const { data: requestsData } = useAppointmentRequests({ limit: 4 });
 
@@ -24,7 +25,12 @@ export default function AssistantDashboardPage() {
     );
   }
 
-  if (isError) {
+  const d = data?.data ?? {};
+  const noDoctorAssigned =
+    (isError && getErrorStatus(error) === 404) ||
+    (d.doctorId == null && d.assignedDoctor == null && d.doctor == null);
+
+  if (isError && !noDoctorAssigned) {
     return (
       <ErrorState
         title="Could not load your dashboard"
@@ -34,7 +40,27 @@ export default function AssistantDashboardPage() {
     );
   }
 
-  const d = data?.data ?? {};
+  if (noDoctorAssigned) {
+    return (
+      <div>
+        <PageHeader
+          title="Assistant overview"
+          subtitle="Requests and queue status across your assigned doctor."
+        />
+        <div className="card p-8 text-center">
+          <Stethoscope className="mx-auto h-10 w-10 text-slate-300" />
+          <h2 className="mt-4 text-lg font-bold text-slate-900">
+            No doctor assigned yet. Please contact the administrator.
+          </h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Once an administrator assigns you to a doctor, your dashboard, requests and queue will
+            appear here.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const doctor = doctorData?.data ?? {};
   const requestsRaw = requestsData?.data ?? {};
   const requests = requestsRaw.requests ?? requestsRaw.items ?? requestsRaw.data ?? [];

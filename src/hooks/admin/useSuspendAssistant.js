@@ -8,6 +8,7 @@ export function useSuspendAssistant() {
   return useMutation({
     mutationFn: suspendAssistant,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistants'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       toast.success('Assistant suspended.');
     },

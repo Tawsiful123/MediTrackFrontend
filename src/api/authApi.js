@@ -15,6 +15,11 @@ export async function registerDoctorRequest(body) {
   return data;
 }
 
+export async function registerAssistantRequest(body) {
+  const { data } = await axiosInstance.post('/auth/register/assistant', body);
+  return data;
+}
+
 export async function logoutRequest() {
   const { data } = await axiosInstance.post('/auth/logout');
   return data;

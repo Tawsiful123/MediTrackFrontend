@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { UserCog, UserMinus, Ban, UserPlus } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Button from '@/components/common/Button';
 import Spinner from '@/components/common/Spinner';
 import ErrorState from '@/components/common/ErrorState';
@@ -9,25 +10,22 @@ import Avatar from '@/components/common/Avatar';
 import Modal from '@/components/common/Modal';
 import Select from '@/components/common/Select';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
-import { useUsersList } from '@/hooks/admin/useUsersList';
+import Pagination from '@/components/common/Pagination';
+import { useAssistantsList } from '@/hooks/admin/useAssistantsList';
 import { useDoctorsList } from '@/hooks/doctors/useDoctorsList';
-import { useAssignAssistant } from '@/hooks/admin/useAssignAssistant';
-import { useRemoveAssistant } from '@/hooks/admin/useRemoveAssistant';
+import { useAssignAssistantDoctor } from '@/hooks/admin/useAssignAssistantDoctor';
 import { useSuspendAssistant } from '@/hooks/admin/useSuspendAssistant';
 
 const getName = (a) => a.fullName ?? a.name ?? 'Assistant';
 const getEmail = (a) => a.email ?? a.user?.email ?? '';
+const getId = (a) => a.id ?? a._id;
 
 export default function AssistantsManagementPage() {
-  const { data, isLoading, isError, refetch } = useUsersList({
-    role: 'DOCTOR_ASSISTANT',
-    page: 1,
-    limit: 100,
-  });
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError, refetch } = useAssistantsList({ page, limit: 10 });
 
   const { data: doctorsData } = useDoctorsList({ limit: 100 });
-  const assignMutation = useAssignAssistant();
-  const removeMutation = useRemoveAssistant();
+  const assignMutation = useAssignAssistantDoctor();
   const suspendMutation = useSuspendAssistant();
 
   const [assignTarget, setAssignTarget] = useState(null);
@@ -35,7 +33,9 @@ export default function AssistantsManagementPage() {
   const [suspensionTarget, setSuspensionTarget] = useState(null);
 
   const result = data?.data ?? {};
-  const assistants = result.users ?? result.data ?? [];
+  const assistants = Array.isArray(result)
+    ? result
+    : result.assistants ?? result.items ?? result.data ?? [];
 
   const doctorOptions = (doctorsData?.data?.doctors ?? doctorsData?.data?.items ?? doctorsData?.data ?? [])
     .map((d) => ({ value: d.id, label: d.fullName ?? d.name }))
@@ -44,9 +44,10 @@ export default function AssistantsManagementPage() {
   const submitAssign = () => {
     if (!selectedDoctor) return;
     assignMutation.mutate(
-      { id: assignTarget.id, doctorId: selectedDoctor },
+      { assistantId: getId(assignTarget), doctorId: selectedDoctor },
       {
         onSuccess: () => {
+          toast.success('Assistant assigned to the doctor.');
           setAssignTarget(null);
           setSelectedDoctor('');
         },
@@ -54,8 +55,14 @@ export default function AssistantsManagementPage() {
     );
   };
 
-  const busy =
-    assignMutation.isPending || removeMutation.isPending || suspendMutation.isPending;
+  const unassign = (assistant) => {
+    assignMutation.mutate(
+      { assistantId: getId(assistant), doctorId: null },
+      { onSuccess: () => toast.success('Assistant unassigned.') },
+    );
+  };
+
+  const busy = assignMutation.isPending || suspendMutation.isPending;
 
   return (
     <div className="space-y-6">
@@ -92,10 +99,11 @@ export default function AssistantsManagementPage() {
       ) : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="w-full min-w-[820px] text-left text-sm">
               <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-6 py-3.5">Assistant</th>
+                  <th className="px-6 py-3.5">Designation</th>
                   <th className="px-6 py-3.5">Assigned doctor</th>
                   <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5 text-right">Actions</th>
@@ -109,8 +117,9 @@ export default function AssistantsManagementPage() {
                     a.doctor?.fullName ??
                     a.doctorName ??
                     '';
+                  const designation = a.designation ?? a.user?.designation ?? '';
                   return (
-                    <tr key={a.id} className="transition hover:bg-slate-50/60">
+                    <tr key={a.id ?? a._id} className="transition hover:bg-slate-50/60">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar name={getName(a)} />
@@ -120,6 +129,7 @@ export default function AssistantsManagementPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="px-6 py-4 text-slate-600">{designation || '—'}</td>
                       <td className="px-6 py-4">
                         {assignedDoctor ? (
                           <span className="badge bg-purple-50 text-purple-700">
@@ -152,8 +162,8 @@ export default function AssistantsManagementPage() {
                             variant="ghost"
                             disabled={busy || !assignedDoctor}
                             className="text-amber-600 hover:bg-amber-50"
-                            aria-label="Remove from doctor"
-                            onClick={() => removeMutation.mutate(a.id)}
+                            title="Unassign"
+                            onClick={() => unassign(a)}
                           >
                             <UserMinus className="h-4 w-4" />
                           </Button>
@@ -162,7 +172,7 @@ export default function AssistantsManagementPage() {
                             variant="ghost"
                             disabled={busy}
                             className="text-rose-600 hover:bg-rose-50"
-                            aria-label="Suspend assistant"
+                            title="Suspend assistant"
                             onClick={() => setSuspensionTarget(a)}
                           >
                             <Ban className="h-4 w-4" />
@@ -175,6 +185,12 @@ export default function AssistantsManagementPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {!isLoading && !isError && assistants.length > 0 && (
+        <div className="flex justify-center">
+          <Pagination meta={result.meta} page={page} onChange={setPage} />
         </div>
       )}
 
@@ -214,7 +230,7 @@ export default function AssistantsManagementPage() {
         loading={suspendMutation.isPending}
         onClose={() => setSuspensionTarget(null)}
         onConfirm={() => {
-          if (suspensionTarget) suspendMutation.mutate(suspensionTarget.id, { onSuccess: () => setSuspensionTarget(null) });
+          if (suspensionTarget) suspendMutation.mutate(getId(suspensionTarget), { onSuccess: () => setSuspensionTarget(null) });
         }}
       />
     </div>

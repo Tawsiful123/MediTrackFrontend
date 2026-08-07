@@ -12,6 +12,10 @@ export function useCallNext() {
       toast.success('Patient called.');
     },
     onError: (error) => {
+      if (error.response?.status === 403) {
+        toast.error("This doesn't belong to your assigned doctor.");
+        return;
+      }
       handleApiError(error, { fallback: 'Could not call the next patient.' });
     },
   });

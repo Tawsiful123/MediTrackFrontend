@@ -48,12 +48,24 @@ export default function LoginPage() {
       title="Welcome back"
       subtitle="Sign in to your MediTrack account"
       footer={
-        <p className="text-center text-sm text-slate-500">
-          New to MediTrack?{' '}
-          <Link to="/register/patient" className="font-semibold text-indigo-600 transition hover:text-indigo-700">
-            Create an account
-          </Link>
-        </p>
+        <>
+          <p className="text-center text-sm text-slate-500">
+            New to MediTrack?{' '}
+            <Link to="/register/patient" className="font-semibold text-indigo-600 transition hover:text-indigo-700">
+              Create an account
+            </Link>
+          </p>
+          <p className="mt-2 text-center text-sm text-slate-500">
+            Are you a doctor?{' '}
+            <Link to="/register/doctor" className="font-semibold text-indigo-600 transition hover:text-indigo-700">
+              Register here
+            </Link>
+            {' '}or{' '}
+            <Link to="/register/assistant" className="font-semibold text-indigo-600 transition hover:text-indigo-700">
+              join as an assistant
+            </Link>
+          </p>
+        </>
       }
     >
       <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>

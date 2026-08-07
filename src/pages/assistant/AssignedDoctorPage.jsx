@@ -6,9 +6,10 @@ import Spinner from '@/components/common/Spinner';
 import ErrorState from '@/components/common/ErrorState';
 import { useAssignedDoctor } from '@/hooks/assistant/useAssignedDoctor';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { getErrorStatus } from '@/utils/getErrorMessage';
 
 export default function AssignedDoctorPage() {
-  const { data, isLoading, isError, refetch } = useAssignedDoctor();
+  const { data, isLoading, isError, error, refetch } = useAssignedDoctor();
 
   if (isLoading) {
     return (
@@ -19,10 +20,27 @@ export default function AssignedDoctorPage() {
   }
 
   if (isError) {
+    if (getErrorStatus(error) === 404) {
+      return (
+        <div>
+          <PageHeader title="Assigned doctor" subtitle="The doctor you're assisting." />
+          <div className="card p-8 text-center">
+            <Stethoscope className="mx-auto h-10 w-10 text-slate-300" />
+            <h2 className="mt-4 text-lg font-bold text-slate-900">
+              No doctor assigned yet. Please contact the administrator.
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Once an administrator assigns you to a doctor, their profile and schedule will appear
+              here.
+            </p>
+          </div>
+        </div>
+      );
+    }
     return (
       <ErrorState
         title="Could not load assigned doctor"
-        message="No doctor is assigned to you yet, or the service is unavailable."
+        message="Something went wrong while fetching your assigned doctor."
         onRetry={refetch}
       />
     );
