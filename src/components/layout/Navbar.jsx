@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { HeartPulse, Menu, X, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react';
+import { HeartPulse, Menu, X, ChevronDown, LayoutDashboard, LogOut, KeyRound } from 'lucide-react';
 import { useAuth } from '@/features/auth/useAuth';
 import { useLogout } from '@/hooks/auth/useLogout';
 import { getRedirectPath } from '@/utils/roleRedirect';
@@ -96,6 +96,17 @@ export default function Navbar() {
                       </button>
                       <button
                         role="menuitem"
+                        onClick={() => {
+                          setUserOpen(false);
+                          navigate('/change-password');
+                        }}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:bg-indigo-50"
+                      >
+                        <KeyRound className="h-4 w-4" />
+                        Change password
+                      </button>
+                      <button
+                        role="menuitem"
                         onClick={handleLogout}
                         disabled={logoutMutation.isPending}
                         className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50 focus:outline-none focus:bg-rose-50"
@@ -159,6 +170,16 @@ export default function Navbar() {
                 </div>
                 <button onClick={() => navigate(dashboardPath)} className="btn-primary w-full">
                   Dashboard
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    navigate('/change-password');
+                  }}
+                  className="btn-outline w-full"
+                >
+                  <KeyRound className="h-4 w-4" />
+                  Change password
                 </button>
                 <button onClick={handleLogout} className="btn-outline w-full text-rose-600">
                   Sign out

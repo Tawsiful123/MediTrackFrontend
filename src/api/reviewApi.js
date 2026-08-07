@@ -5,6 +5,11 @@ export async function getMyReviews(params) {
   return data;
 }
 
+export async function getAllReviews(params) {
+  const { data } = await axiosInstance.get('/reviews', { params });
+  return data;
+}
+
 export async function createReviewRequest(body) {
   const { data } = await axiosInstance.post('/reviews', body);
   return data;

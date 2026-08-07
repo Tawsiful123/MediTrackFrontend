@@ -58,7 +58,7 @@ export default function AppointmentDetailPage() {
 
   const handleReschedule = async () => {
     if (!newDate || !newSlot) return;
-    await reschedule({ id, date: newDate, slot: newSlot });
+    await reschedule({ id, date: newDate, timeSlot: newSlot });
     setRescheduleOpen(false);
     setNewDate('');
     setNewSlot('');

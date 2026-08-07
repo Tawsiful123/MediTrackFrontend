@@ -1,108 +1,222 @@
 import { useState } from 'react';
-import { UserCog, UserMinus, Ban } from 'lucide-react';
-import toast from 'react-hot-toast';
-import PageHeader from '@/components/common/PageHeader';
+import { UserCog, UserMinus, Ban, UserPlus } from 'lucide-react';
 import Button from '@/components/common/Button';
+import Spinner from '@/components/common/Spinner';
+import ErrorState from '@/components/common/ErrorState';
+import EmptyState from '@/components/common/EmptyState';
 import Badge from '@/components/common/Badge';
+import Avatar from '@/components/common/Avatar';
 import Modal from '@/components/common/Modal';
 import Select from '@/components/common/Select';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
+import { useUsersList } from '@/hooks/admin/useUsersList';
+import { useDoctorsList } from '@/hooks/doctors/useDoctorsList';
+import { useAssignAssistant } from '@/hooks/admin/useAssignAssistant';
+import { useRemoveAssistant } from '@/hooks/admin/useRemoveAssistant';
+import { useSuspendAssistant } from '@/hooks/admin/useSuspendAssistant';
 
-const initial = [
-  { id: 1, name: 'Nadia Khan', email: 'nadia@meditrack.com', doctor: 'Dr. Ayesha Siddiqui', status: 'ACTIVE' },
-  { id: 2, name: 'James Park', email: 'james@meditrack.com', doctor: 'Dr. John Carter', status: 'ACTIVE' },
-  { id: 3, name: 'Sara Ali', email: 'sara@meditrack.com', doctor: null, status: 'INACTIVE' },
-];
-
-const doctors = ['Dr. Ayesha Siddiqui', 'Dr. John Carter', 'Dr. Priya Sharma'];
+const getName = (a) => a.fullName ?? a.name ?? 'Assistant';
+const getEmail = (a) => a.email ?? a.user?.email ?? '';
 
 export default function AssistantsManagementPage() {
-  const [assistants, setAssistants] = useState(initial);
+  const { data, isLoading, isError, refetch } = useUsersList({
+    role: 'DOCTOR_ASSISTANT',
+    page: 1,
+    limit: 100,
+  });
+
+  const { data: doctorsData } = useDoctorsList({ limit: 100 });
+  const assignMutation = useAssignAssistant();
+  const removeMutation = useRemoveAssistant();
+  const suspendMutation = useSuspendAssistant();
+
   const [assignTarget, setAssignTarget] = useState(null);
   const [selectedDoctor, setSelectedDoctor] = useState('');
+  const [suspensionTarget, setSuspensionTarget] = useState(null);
 
-  const assign = () => {
-    if (!selectedDoctor) {
-      toast.error('Select a doctor to assign');
-      return;
-    }
-    setAssistants((list) =>
-      list.map((a) => (a.id === assignTarget.id ? { ...a, doctor: selectedDoctor, status: 'ACTIVE' } : a))
+  const result = data?.data ?? {};
+  const assistants = result.users ?? result.data ?? [];
+
+  const doctorOptions = (doctorsData?.data?.doctors ?? doctorsData?.data?.items ?? doctorsData?.data ?? [])
+    .map((d) => ({ value: d.id, label: d.fullName ?? d.name }))
+    .filter((d) => d.label);
+
+  const submitAssign = () => {
+    if (!selectedDoctor) return;
+    assignMutation.mutate(
+      { id: assignTarget.id, doctorId: selectedDoctor },
+      {
+        onSuccess: () => {
+          setAssignTarget(null);
+          setSelectedDoctor('');
+        },
+      },
     );
-    toast.success('Assistant assigned');
-    setAssignTarget(null);
-    setSelectedDoctor('');
   };
 
-  const remove = (a) => {
-    setAssistants((list) => list.map((x) => (x.id === a.id ? { ...x, doctor: null, status: 'INACTIVE' } : x)));
-    toast.success('Assistant unassigned');
-  };
+  const busy =
+    assignMutation.isPending || removeMutation.isPending || suspendMutation.isPending;
 
   return (
-    <div>
-      <PageHeader title="Assistants management" subtitle="Assign doctor assistants to practices." />
+    <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-teal-500 p-6 text-white shadow-lg sm:p-8">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative">
+          <span className="badge bg-white/20 text-white">
+            <UserPlus className="mr-1 h-3.5 w-3.5" />
+            Practice team
+          </span>
+          <h1 className="mt-3 text-2xl font-extrabold sm:text-3xl">Assistants management</h1>
+          <p className="mt-2 max-w-xl text-sm text-indigo-100">
+            Assign doctor assistants to practices so they can manage bookings and the queue.
+          </p>
+        </div>
+      </section>
 
-      <div className="card overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-6 py-3.5">Assistant</th>
-              <th className="px-6 py-3.5">Assigned doctor</th>
-              <th className="px-6 py-3.5">Status</th>
-              <th className="px-6 py-3.5 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {assistants.map((a) => (
-              <tr key={a.id} className="transition hover:bg-slate-50/60">
-                <td className="px-6 py-4">
-                  <p className="font-semibold text-slate-800">{a.name}</p>
-                  <p className="text-xs text-slate-400">{a.email}</p>
-                </td>
-                <td className="px-6 py-4">{a.doctor ?? <span className="text-slate-400">Unassigned</span>}</td>
-                <td className="px-6 py-4"><Badge status={a.status}>{a.status}</Badge></td>
-                <td className="px-6 py-4">
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="outline" onClick={() => { setAssignTarget(a); setSelectedDoctor(a.doctor ?? ''); }}>
-                      <UserCog className="h-4 w-4" /> Assign
-                    </Button>
-                    {a.doctor && (
-                      <>
-                        <Button size="sm" variant="ghost" className="text-amber-600 hover:bg-amber-50" onClick={() => remove(a)}>
-                          <UserMinus className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="text-rose-600 hover:bg-rose-50" onClick={() => remove(a)} aria-label="Suspend">
-                          <Ban className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {isLoading ? (
+        <div className="card flex items-center justify-center py-20">
+          <Spinner label="Loading assistants..." />
+        </div>
+      ) : isError ? (
+        <ErrorState
+          title="Could not load assistants"
+          message="Something went wrong while fetching assistant accounts."
+          onRetry={refetch}
+        />
+      ) : assistants.length === 0 ? (
+        <EmptyState
+          icon={UserPlus}
+          title="No assistants yet"
+          message="Assistant accounts will appear here once they register."
+        />
+      ) : (
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-left text-sm">
+              <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-6 py-3.5">Assistant</th>
+                  <th className="px-6 py-3.5">Assigned doctor</th>
+                  <th className="px-6 py-3.5">Status</th>
+                  <th className="px-6 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {assistants.map((a) => {
+                  const assignedDoctor =
+                    a.assignedDoctor?.fullName ??
+                    a.assignedDoctor?.name ??
+                    a.doctor?.fullName ??
+                    a.doctorName ??
+                    '';
+                  return (
+                    <tr key={a.id} className="transition hover:bg-slate-50/60">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar name={getName(a)} />
+                          <div>
+                            <p className="font-semibold text-slate-800">{getName(a)}</p>
+                            <p className="text-xs text-slate-400">{getEmail(a)}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {assignedDoctor ? (
+                          <span className="badge bg-purple-50 text-purple-700">
+                            <UserCog className="mr-1 h-3 w-3" />
+                            {assignedDoctor}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge status={a.status}>{a.status}</Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busy}
+                            onClick={() => {
+                              setAssignTarget(a);
+                              setSelectedDoctor(a.doctorId ?? a.assignedDoctorId ?? '');
+                            }}
+                          >
+                            <UserCog className="h-4 w-4" />
+                            Assign
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={busy || !assignedDoctor}
+                            className="text-amber-600 hover:bg-amber-50"
+                            aria-label="Remove from doctor"
+                            onClick={() => removeMutation.mutate(a.id)}
+                          >
+                            <UserMinus className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={busy}
+                            className="text-rose-600 hover:bg-rose-50"
+                            aria-label="Suspend assistant"
+                            onClick={() => setSuspensionTarget(a)}
+                          >
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <Modal
         open={!!assignTarget}
         onClose={() => setAssignTarget(null)}
-        title={`Assign ${assignTarget?.name ?? ''}`}
+        title={`Assign ${assignTarget ? getName(assignTarget) : ''}`}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAssignTarget(null)}>Cancel</Button>
-            <Button onClick={assign}>Assign assistant</Button>
+            <Button variant="ghost" onClick={() => setAssignTarget(null)} disabled={assignMutation.isPending}>
+              Cancel
+            </Button>
+            <Button loading={assignMutation.isPending} disabled={!selectedDoctor} onClick={submitAssign}>
+              Assign assistant
+            </Button>
           </>
         }
       >
-        <Select
-          label="Doctor"
-          options={doctors}
-          value={selectedDoctor}
-          onChange={(e) => setSelectedDoctor(e.target.value)}
-          placeholder="Select a doctor"
-        />
+        {doctorsData === undefined ? (
+          <Spinner label="Loading doctors..." />
+        ) : (
+          <Select
+            label="Doctor"
+            options={doctorOptions}
+            value={selectedDoctor}
+            onChange={(e) => setSelectedDoctor(e.target.value)}
+            placeholder="Select a doctor"
+          />
+        )}
       </Modal>
+
+      <ConfirmDialog
+        open={!!suspensionTarget}
+        title="Suspend assistant"
+        message={`Suspend ${suspensionTarget ? getName(suspensionTarget) : ''}? They will lose access until reactivated.`}
+        confirmLabel="Suspend"
+        loading={suspendMutation.isPending}
+        onClose={() => setSuspensionTarget(null)}
+        onConfirm={() => {
+          if (suspensionTarget) suspendMutation.mutate(suspensionTarget.id, { onSuccess: () => setSuspensionTarget(null) });
+        }}
+      />
     </div>
   );
 }

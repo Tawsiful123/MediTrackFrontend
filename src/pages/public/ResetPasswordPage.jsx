@@ -5,11 +5,15 @@ import { KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { resetPasswordSchema } from '@/validations/authValidation';
 import { useResetPassword } from '@/hooks/auth/useResetPassword';
+import AuthLayout from '@/components/auth/AuthLayout';
+import PasswordInput from '@/components/common/PasswordInput';
+import Button from '@/components/common/Button';
 
 export default function ResetPasswordPage() {
   const { mutateAsync: resetPassword, isPending } = useResetPassword();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const token = searchParams.get('token') ?? '';
 
   const {
     register,
@@ -17,7 +21,7 @@ export default function ResetPasswordPage() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { token: searchParams.get('token') ?? '' },
+    defaultValues: { token },
   });
 
   const onSubmit = async (values) => {
@@ -30,43 +34,67 @@ export default function ResetPasswordPage() {
     }
   };
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-gradient px-4 py-12">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(255,255,255,0.15),transparent_50%)]" />
-      <div className="relative w-full max-w-md">
-        <div className="card p-8 shadow-2xl sm:p-10">
-          <div className="flex flex-col items-center text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-lg">
-              <KeyRound className="h-6 w-6" />
-            </span>
-            <h1 className="mt-4 text-2xl font-extrabold text-slate-900">Set a new password</h1>
-            <p className="mt-1 text-sm text-slate-500">Choose a strong password you'll remember.</p>
-          </div>
-
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div>
-              <label className="label">New password</label>
-              <input type="password" placeholder="At least 8 characters" className={`input ${errors.newPassword ? 'border-rose-400' : ''}`} {...register('newPassword')} />
-              {errors.newPassword && <p className="mt-1 text-xs font-medium text-rose-600">{errors.newPassword.message}</p>}
-            </div>
-            <div>
-              <label className="label">Confirm new password</label>
-              <input type="password" placeholder="Repeat your password" className={`input ${errors.confirmPassword ? 'border-rose-400' : ''}`} {...register('confirmPassword')} />
-              {errors.confirmPassword && <p className="mt-1 text-xs font-medium text-rose-600">{errors.confirmPassword.message}</p>}
-            </div>
-
-            <button type="submit" disabled={isPending} className="btn-primary w-full py-3">
-              {isPending ? 'Updating...' : 'Update password'}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-slate-500">
-            <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-700">
-              Back to sign in
+  if (!token) {
+    return (
+      <AuthLayout
+        icon={KeyRound}
+        title="Invalid reset link"
+        subtitle="This link is missing its token or has already expired."
+        footer={
+          <p className="text-center text-sm text-slate-500">
+            <Link to="/forgot-password" className="font-semibold text-indigo-600 transition hover:text-indigo-700">
+              Request a new reset link
             </Link>
           </p>
-        </div>
-      </div>
-    </div>
+        }
+      >
+        <p className="text-center text-sm text-slate-500">
+          You can also{' '}
+          <Link to="/login" className="font-semibold text-indigo-600 transition hover:text-indigo-700">
+            go back to sign in
+          </Link>
+          .
+        </p>
+      </AuthLayout>
+    );
+  }
+
+  return (
+    <AuthLayout
+      icon={KeyRound}
+      title="Set a new password"
+      subtitle="Choose a strong password you'll remember."
+      footer={
+        <p className="text-center text-sm text-slate-500">
+          <Link to="/login" className="font-semibold text-indigo-600 transition hover:text-indigo-700">
+            Back to sign in
+          </Link>
+        </p>
+      }
+    >
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <input type="hidden" {...register('token')} />
+
+        <PasswordInput
+          label="New password"
+          autoComplete="new-password"
+          placeholder="At least 8 characters"
+          error={errors.newPassword?.message}
+          {...register('newPassword')}
+        />
+
+        <PasswordInput
+          label="Confirm new password"
+          autoComplete="new-password"
+          placeholder="Repeat your password"
+          error={errors.confirmPassword?.message}
+          {...register('confirmPassword')}
+        />
+
+        <Button type="submit" size="lg" loading={isPending} className="w-full py-3">
+          Update password
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }

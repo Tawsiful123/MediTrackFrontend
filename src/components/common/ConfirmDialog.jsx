@@ -12,6 +12,7 @@ export default function ConfirmDialog({
   loading = false,
   onConfirm,
   onClose,
+  children,
 }) {
   return (
     <Modal
@@ -40,7 +41,10 @@ export default function ConfirmDialog({
         >
           {danger ? <AlertTriangle className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
         </div>
-        <p className="text-sm leading-relaxed text-slate-600">{message}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm leading-relaxed text-slate-600">{message}</p>
+          {children}
+        </div>
       </div>
     </Modal>
   );

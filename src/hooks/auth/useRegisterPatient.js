@@ -1,13 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
 import { registerPatientRequest } from '@/api/authApi';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { handleApiError } from '@/utils/getErrorMessage';
 
 export function useRegisterPatient() {
   return useMutation({
     mutationFn: registerPatientRequest,
     onError: (error) => {
-      toast.error(getErrorMessage(error, 'Registration failed. Please try again.'));
+      handleApiError(error, { fallback: 'Registration failed. Please try again.' });
     },
   });
 }

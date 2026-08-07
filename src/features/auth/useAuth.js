@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { logout, setCredentials, setAccessToken, setUser } from '@/features/auth/authSlice';
+import { logout, setCredentials, setAccessToken, setUser, passwordChanged } from '@/features/auth/authSlice';
 
 export function useAuth() {
   const dispatch = useDispatch();
@@ -16,6 +16,7 @@ export function useAuth() {
     login: (payload) => dispatch(setCredentials(payload)),
     setToken: (token) => dispatch(setAccessToken(token)),
     updateUser: (userData) => dispatch(setUser(userData)),
+    clearPasswordChangeFlag: () => dispatch(passwordChanged()),
     logout: () => dispatch(logout()),
   };
 }

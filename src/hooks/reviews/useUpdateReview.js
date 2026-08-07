@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { updateReviewRequest } from '@/api/reviewApi';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { handleApiError } from '@/utils/getErrorMessage';
 
 export function useUpdateReview() {
   const queryClient = useQueryClient();
@@ -13,7 +13,7 @@ export function useUpdateReview() {
       toast.success('Review updated.');
     },
     onError: (error) => {
-      toast.error(getErrorMessage(error, 'Could not update the review.'));
+      handleApiError(error, { fallback: 'Could not update the review.' });
     },
   });
 }

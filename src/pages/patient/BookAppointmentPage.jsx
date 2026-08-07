@@ -10,6 +10,7 @@ import Spinner from '@/components/common/Spinner';
 import ErrorState from '@/components/common/ErrorState';
 import { useAuth } from '@/features/auth/useAuth';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { getErrorStatus } from '@/utils/getErrorMessage';
 import { useDoctorDetail } from '@/hooks/doctors/useDoctorDetail';
 import { useDoctorSchedule } from '@/hooks/doctors/useDoctorSchedule';
 import { useBookAppointment } from '@/hooks/appointments/useBookAppointment';
@@ -24,7 +25,12 @@ export default function BookAppointmentPage() {
   const { mutateAsync: book, isPending } = useBookAppointment();
 
   const { data, isLoading, isError, refetch } = useDoctorDetail(doctorId);
-  const { data: scheduleData } = useDoctorSchedule(doctorId);
+  const {
+    data: scheduleData,
+    isLoading: scheduleLoading,
+    isError: scheduleError,
+    refetch: refetchSchedule,
+  } = useDoctorSchedule(doctorId);
 
   const scheduleEntries = useMemo(() => {
     const schedule = scheduleData?.data ?? {};
@@ -45,8 +51,18 @@ export default function BookAppointmentPage() {
       toast.error('Please pick a date and time slot');
       return;
     }
-    await book({ doctorId, date, slot, reason });
-    navigate('/patient/appointments');
+    try {
+      const result = await book({ doctorId, date, timeSlot: slot, reason });
+      navigate('/patient/appointments', { state: { booked: true } });
+      return result;
+    } catch (err) {
+      if (getErrorStatus(err) === 409) {
+        // Slot taken while booking — refresh the schedule so the picker updates live (§13.1).
+        setSlot('');
+        refetchSchedule();
+      }
+      throw err;
+    }
   };
 
   if (isLoading) {
@@ -118,7 +134,18 @@ export default function BookAppointmentPage() {
 
         <div>
           <label className="label">Available slots</label>
-          {availableSlots.length > 0 ? (
+          {scheduleError ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3">
+              <p className="text-sm text-rose-600">Could not load the doctor's schedule.</p>
+              <button type="button" onClick={refetchSchedule} className="btn-outline px-3 py-1.5 text-xs">
+                Retry
+              </button>
+            </div>
+          ) : scheduleLoading && date ? (
+            <div className="py-3">
+              <Spinner size="sm" label="Loading schedule..." />
+            </div>
+          ) : availableSlots.length > 0 ? (
             <SlotPicker value={slot} onChange={setSlot} availableSlots={availableSlots} />
           ) : (
             <p className="text-sm text-slate-400">

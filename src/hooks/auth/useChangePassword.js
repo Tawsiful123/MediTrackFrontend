@@ -1,13 +1,18 @@
 import { useMutation } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
 import { changePasswordRequest } from '@/api/authApi';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { passwordChanged } from '@/features/auth/authSlice';
+import { handleApiError } from '@/utils/getErrorMessage';
 
 export function useChangePassword() {
+  const dispatch = useDispatch();
   return useMutation({
     mutationFn: changePasswordRequest,
+    onSuccess: () => {
+      dispatch(passwordChanged());
+    },
     onError: (error) => {
-      toast.error(getErrorMessage(error, 'Password change failed. Please try again.'));
+      handleApiError(error, { fallback: 'Password change failed. Please try again.' });
     },
   });
 }

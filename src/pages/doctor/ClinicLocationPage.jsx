@@ -1,23 +1,73 @@
-import { useState } from 'react';
-import { MapPin, Save } from 'lucide-react';
+import { useEffect } from 'react';
+import { MapPin, ExternalLink, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import PageHeader from '@/components/common/PageHeader';
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
 import TextArea from '@/components/common/TextArea';
+import Spinner from '@/components/common/Spinner';
+import ErrorState from '@/components/common/ErrorState';
+import { clinicLocationSchema } from '@/validations/doctorValidation';
+import { useDoctorProfile } from '@/hooks/doctorSelf/useDoctorProfile';
+import { useUpdateClinicLocation } from '@/hooks/doctorSelf/useUpdateClinicLocation';
 
 export default function ClinicLocationPage() {
-  const [saving, setSaving] = useState(false);
+  const { data, isLoading, isError, refetch } = useDoctorProfile();
+  const { mutateAsync: saveLocation, isPending: saving } = useUpdateClinicLocation();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSaving(true);
-    // TODO: wire to PATCH /doctor/me/clinic-location (useUpdateClinicLocation)
-    setTimeout(() => {
-      setSaving(false);
-      toast.success('Clinic location updated');
-    }, 900);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(clinicLocationSchema) });
+
+  const doctor = data?.data ?? {};
+  const clinic = doctor.clinicLocation ?? {};
+
+  useEffect(() => {
+    if (data?.data) {
+      reset({
+        clinicAddress: doctor.clinicAddress ?? '',
+        latitude: clinic.latitude ?? '',
+        longitude: clinic.longitude ?? '',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  const onSubmit = async (values) => {
+    try {
+      await saveLocation({
+        clinicAddress: values.clinicAddress,
+        latitude: values.latitude == null || values.latitude === '' ? undefined : Number(values.latitude),
+        longitude: values.longitude == null || values.longitude === '' ? undefined : Number(values.longitude),
+      });
+      toast.success('Clinic location updated.');
+    } catch {
+      // toast handled in the mutation layer
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="py-24 text-center">
+        <Spinner label="Loading clinic details..." />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <ErrorState
+        title="Could not load clinic details"
+        message="Something went wrong while fetching your location."
+        onRetry={refetch}
+      />
+    );
+  }
 
   return (
     <div>
@@ -33,18 +83,31 @@ export default function ClinicLocationPage() {
             </div>
           </div>
           <p className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/90 px-4 py-1.5 text-xs font-medium text-slate-500 shadow backdrop-blur">
-            Connect Google Maps in .env (VITE_GOOGLE_MAPS_API_KEY)
+            {clinic.latitude && clinic.longitude
+              ? `${clinic.latitude}, ${clinic.longitude}`
+              : 'Set coordinates below to show yourself on the nearby doctors map'}
           </p>
+          {clinic.latitude && clinic.longitude && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${clinic.latitude},${clinic.longitude}`}
+              target="_blank"
+              rel="noreferrer"
+              className="absolute bottom-12 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-lg transition hover:bg-indigo-700"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Open in Maps
+            </a>
+          )}
         </div>
 
-        <form className="card space-y-5 p-6 lg:col-span-2" onSubmit={handleSubmit}>
+        <form className="card space-y-5 p-6 lg:col-span-2" onSubmit={handleSubmit(onSubmit)} noValidate>
           <h3 className="text-base font-bold text-slate-900">Location details</h3>
 
-          <TextArea label="Clinic address" rows={3} defaultValue="134 Heartbeat Avenue, Springfield, USA" />
+          <TextArea label="Clinic address" rows={3} error={errors.clinicAddress?.message} {...register('clinicAddress')} />
 
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Latitude" type="number" step="any" defaultValue={24.8607} />
-            <Input label="Longitude" type="number" step="any" defaultValue={67.0011} />
+            <Input label="Latitude" type="number" step="any" error={errors.latitude?.message} {...register('latitude')} />
+            <Input label="Longitude" type="number" step="any" error={errors.longitude?.message} {...register('longitude')} />
           </div>
 
           <div className="rounded-xl bg-indigo-50 p-4 text-xs text-indigo-700">

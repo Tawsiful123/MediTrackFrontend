@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { logoutRequest } from '@/api/authApi';
 import { useAuth } from '@/features/auth/useAuth';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { handleApiError } from '@/utils/getErrorMessage';
 
 export function useLogout() {
   const { logout } = useAuth();
@@ -19,7 +19,7 @@ export function useLogout() {
       navigate('/login');
     },
     onError: (error) => {
-      toast.error(getErrorMessage(error, 'Sign out failed. Please try again.'));
+      handleApiError(error, { fallback: 'Sign out failed. Please try again.' });
     },
   });
 }

@@ -1,76 +1,147 @@
-import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useEffect, useState } from 'react';
+import { MessageSquare, ShieldAlert, Star } from 'lucide-react';
 import PageHeader from '@/components/common/PageHeader';
-import Button from '@/components/common/Button';
-import Badge from '@/components/common/Badge';
-import Avatar from '@/components/common/Avatar';
 import SearchBar from '@/components/common/SearchBar';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
+import EmptyState from '@/components/common/EmptyState';
+import Spinner from '@/components/common/Spinner';
+import ErrorState from '@/components/common/ErrorState';
+import Pagination from '@/components/common/Pagination';
+import ReviewCard from '@/components/reviews/ReviewCard';
+import { useAllReviews } from '@/hooks/reviews/useAllReviews';
+import { useDeleteReview } from '@/hooks/reviews/useDeleteReview';
 
-const initial = [
-  { id: 1, author: 'Rahul Verma', doctor: 'Dr. Ayesha Siddiqui', rating: 5, comment: 'Excellent doctor, highly recommended!', status: 'ACTIVE' },
-  { id: 2, author: 'David Chen', doctor: 'Dr. John Carter', rating: 2, comment: 'Rude staff and long wait times. Would not recommend.', status: 'FLAGGED' },
-];
+const LIMIT = 10;
+
+function getId(r) {
+  return r?.id ?? r?._id;
+}
 
 export default function ReviewsModerationPage() {
-  const [reviews, setReviews] = useState(initial);
   const [search, setSearch] = useState('');
+  const [debounced, setDebounced] = useState('');
+  const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const { mutateAsync: deleteReview, isPending: deleting } = useDeleteReview();
 
-  const filtered = reviews.filter(
-    (r) =>
-      r.author.toLowerCase().includes(search.toLowerCase()) ||
-      r.doctor.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  const confirmDelete = () => {
-    setReviews((list) => list.filter((r) => r.id !== deleteTarget.id));
-    toast.success('Review removed');
+  const onSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
+  const { data, isLoading, isError, refetch } = useAllReviews({
+    search: debounced || undefined,
+    page,
+    limit: LIMIT,
+  });
+
+  const result = data?.data ?? {};
+  const reviews = result.reviews ?? result.items ?? result.data ?? [];
+  const meta = result.meta;
+
+  const average = reviews.length
+    ? (reviews.reduce((sum, r) => sum + Number(r.rating ?? 0), 0) / reviews.length).toFixed(1)
+    : '0.0';
+  const flaggedCount = reviews.filter((r) => r.status === 'FLAGGED').length;
+
+  const confirmDelete = async () => {
+    await deleteReview(getId(deleteTarget));
     setDeleteTarget(null);
   };
 
+  if (isLoading) {
+    return (
+      <div className="py-24 text-center">
+        <Spinner label="Loading reviews..." />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <ErrorState
+        title="Could not load reviews"
+        message="Something went wrong while fetching the review queue."
+        onRetry={refetch}
+      />
+    );
+  }
+
   return (
     <div>
-      <PageHeader title="Reviews moderation" subtitle="Review and remove inappropriate content." />
+      <PageHeader
+        title="Reviews moderation"
+        subtitle="Review and remove inappropriate content to keep the community healthy."
+      />
 
-      <div className="mb-5 max-w-sm">
-        <SearchBar value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search reviews..." />
+      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+        <div className="card relative overflow-hidden p-5">
+          <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full bg-brand-100/60" aria-hidden="true" />
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <MessageSquare className="h-4 w-4 text-brand-500" /> Showing
+          </p>
+          <p className="mt-1 text-2xl font-extrabold text-slate-900">{reviews.length}</p>
+        </div>
+        <div className="card relative overflow-hidden p-5">
+          <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full bg-gradient-to-br from-amber-100 to-orange-100/70" aria-hidden="true" />
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <Star className="h-4 w-4 text-amber-400" /> Avg rating
+          </p>
+          <p className="mt-1 text-2xl font-extrabold text-slate-900">
+            {average}
+            <span className="text-sm font-semibold text-slate-400"> / 5</span>
+          </p>
+        </div>
+        <div className="card relative overflow-hidden p-5">
+          <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full bg-gradient-to-br from-rose-100 to-rose-200/70" aria-hidden="true" />
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <ShieldAlert className="h-4 w-4 text-rose-500" /> Flagged
+          </p>
+          <p className="mt-1 text-2xl font-extrabold text-slate-900">{flaggedCount}</p>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {filtered.map((r) => (
-          <div key={r.id} className="card p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <Avatar name={r.author} size="sm" />
-                <div>
-                  <p className="text-sm font-bold text-slate-800">{r.author}</p>
-                  <p className="text-xs text-slate-400">Reviewed {r.doctor}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1 text-sm font-semibold text-amber-500">
-                  ★ {r.rating}
-                </span>
-                <Badge status={r.status === 'FLAGGED' ? 'REJECTED' : 'ACTIVE'}>{r.status}</Badge>
-              </div>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-slate-600">{r.comment}</p>
-            <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
-              <Button size="sm" variant="danger" onClick={() => setDeleteTarget(r)}>
-                <Trash2 className="h-4 w-4" /> Remove
-              </Button>
-            </div>
-          </div>
-        ))}
+      <div className="mb-6 max-w-sm">
+        <SearchBar value={search} onChange={onSearchChange} placeholder="Search by patient or doctor..." />
       </div>
+
+      {reviews.length === 0 ? (
+        <EmptyState
+          icon={MessageSquare}
+          title="No reviews found"
+          message="Try adjusting your search, or check back when patients share feedback."
+        />
+      ) : (
+        <div className="grid gap-5 md:grid-cols-2">
+          {reviews.map((r) => (
+            <ReviewCard
+              key={getId(r)}
+              review={r}
+              showActions={false}
+              onDelete={setDeleteTarget}
+              loading={Boolean(deleting)}
+            />
+          ))}
+        </div>
+      )}
+
+      {reviews.length > 0 && (
+        <div className="mt-8">
+          <Pagination meta={meta} page={page} onChange={setPage} />
+        </div>
+      )}
 
       <ConfirmDialog
-        open={!!deleteTarget}
+        open={Boolean(deleteTarget)}
         title="Remove review"
-        message="This review will be deleted immediately."
-        confirmLabel="Remove"
+        message="This review will be deleted immediately and can't be restored."
+        confirmLabel="Remove review"
+        loading={deleting}
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
       />

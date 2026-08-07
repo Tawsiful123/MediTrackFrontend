@@ -1,10 +1,14 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { HeartPulse, User, Mail, Lock, Phone } from 'lucide-react';
+import { UserRoundPlus, User, Mail, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { registerPatientSchema } from '@/validations/authValidation';
 import { useRegisterPatient } from '@/hooks/auth/useRegisterPatient';
+import AuthLayout from '@/components/auth/AuthLayout';
+import Input from '@/components/common/Input';
+import PasswordInput from '@/components/common/PasswordInput';
+import Button from '@/components/common/Button';
 
 export default function RegisterPatientPage() {
   const { mutateAsync: registerPatient, isPending } = useRegisterPatient();
@@ -26,81 +30,70 @@ export default function RegisterPatientPage() {
     }
   };
 
-  const field = {
-    wrapper: 'space-y-5',
-    label: 'label',
-    input: (hasError) => `input pl-9 ${hasError ? 'border-rose-400 focus:ring-rose-200' : ''}`,
-  };
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-gradient px-4 py-12">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_50%)]" />
-      <div className="relative w-full max-w-md">
-        <div className="card p-8 shadow-2xl sm:p-10">
-          <div className="flex flex-col items-center text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-white shadow-lg">
-              <HeartPulse className="h-6 w-6" />
-            </span>
-            <h1 className="mt-4 text-2xl font-extrabold text-slate-900">Create your account</h1>
-            <p className="mt-1 text-sm text-slate-500">Join MediTrack as a patient — it's free.</p>
-          </div>
-
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className={field.wrapper}>
-              <label className={field.label}>Full name</label>
-              <div className="relative">
-                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input placeholder="Jane Doe" className={field.input(!!errors.fullName)} {...register('fullName')} />
-              </div>
-              {errors.fullName && <p className="mt-1 text-xs font-medium text-rose-600">{errors.fullName.message}</p>}
-            </div>
-
-            <div className={field.wrapper}>
-              <label className={field.label}>Email address</label>
-              <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input type="email" placeholder="you@example.com" className={field.input(!!errors.email)} {...register('email')} />
-              </div>
-              {errors.email && <p className="mt-1 text-xs font-medium text-rose-600">{errors.email.message}</p>}
-            </div>
-
-            <div className={field.wrapper}>
-              <label className={field.label}>Password</label>
-              <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input type="password" placeholder="At least 8 characters" className={field.input(!!errors.password)} {...register('password')} />
-              </div>
-              {errors.password && <p className="mt-1 text-xs font-medium text-rose-600">{errors.password.message}</p>}
-            </div>
-
-            <div className={field.wrapper}>
-              <label className={field.label}>Phone (optional)</label>
-              <div className="relative">
-                <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input type="tel" placeholder="+1 555 000 1234" className={field.input(!!errors.phone)} {...register('phone')} />
-              </div>
-              {errors.phone && <p className="mt-1 text-xs font-medium text-rose-600">{errors.phone.message}</p>}
-            </div>
-
-            <button type="submit" disabled={isPending} className="btn-primary w-full py-3">
-              {isPending ? 'Creating account...' : 'Create account'}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-slate-500">
+    <AuthLayout
+      icon={UserRoundPlus}
+      title="Create your account"
+      subtitle="Join MediTrack as a patient — it's free."
+      footer={
+        <>
+          <p className="text-center text-sm text-slate-500">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-700">
+            <Link to="/login" className="font-semibold text-indigo-600 transition hover:text-indigo-700">
               Sign in
             </Link>
           </p>
           <p className="mt-2 text-center text-sm text-slate-500">
             Are you a doctor?{' '}
-            <Link to="/register/doctor" className="font-semibold text-indigo-600 hover:text-indigo-700">
+            <Link to="/register/doctor" className="font-semibold text-indigo-600 transition hover:text-indigo-700">
               Register here
             </Link>
           </p>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Input
+          label="Full name"
+          autoComplete="name"
+          placeholder="Jane Doe"
+          icon={User}
+          error={errors.fullName?.message}
+          {...register('fullName')}
+        />
+
+        <Input
+          label="Email address"
+          type="email"
+          autoComplete="email"
+          placeholder="you@example.com"
+          icon={Mail}
+          error={errors.email?.message}
+          {...register('email')}
+        />
+
+        <PasswordInput
+          label="Password"
+          autoComplete="new-password"
+          placeholder="At least 8 characters"
+          error={errors.password?.message}
+          {...register('password')}
+        />
+
+        <Input
+          label="Phone (optional)"
+          type="tel"
+          autoComplete="tel"
+          placeholder="+1 555 000 1234"
+          icon={Phone}
+          error={errors.phone?.message}
+          {...register('phone')}
+        />
+
+        <Button type="submit" size="lg" loading={isPending} className="w-full py-3">
+          Create account
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { updatePatientProfileRequest } from '@/api/patientApi';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { handleApiError } from '@/utils/getErrorMessage';
 
 export function useUpdatePatientProfile() {
   const queryClient = useQueryClient();
@@ -13,7 +13,7 @@ export function useUpdatePatientProfile() {
       toast.success('Profile updated.');
     },
     onError: (error) => {
-      toast.error(getErrorMessage(error, 'Could not update your profile.'));
+      handleApiError(error, { fallback: 'Could not update your profile.' });
     },
   });
 }

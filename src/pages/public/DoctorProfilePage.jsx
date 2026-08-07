@@ -1,21 +1,18 @@
 import { useParams, Link } from 'react-router-dom';
 import {
   MapPin, Building2, Clock, Star, ChevronRight, CalendarCheck,
-  MessageSquare,
 } from 'lucide-react';
 import Avatar from '@/components/common/Avatar';
-import StarRating from '@/components/common/StarRating';
 import Spinner from '@/components/common/Spinner';
 import ErrorState from '@/components/common/ErrorState';
-import EmptyState from '@/components/common/EmptyState';
+import ScheduleTable from '@/components/doctors/ScheduleTable';
+import ReviewList from '@/components/doctors/ReviewList';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { useDoctorDetail } from '@/hooks/doctors/useDoctorDetail';
-import { useDoctorReviews } from '@/hooks/doctors/useDoctorReviews';
 
 export default function DoctorProfilePage() {
   const { id } = useParams();
   const { data, isLoading, isError, refetch } = useDoctorDetail(id);
-  const { data: reviewsData, isLoading: reviewsLoading } = useDoctorReviews(id, { limit: 10 });
 
   if (isLoading) {
     return (
@@ -39,7 +36,6 @@ export default function DoctorProfilePage() {
 
   const doctor = data.data;
   const specName = doctor.specialization?.name ?? doctor.specialization ?? 'General Practice';
-  const reviews = reviewsData?.data?.reviews ?? reviewsData?.data?.items ?? reviewsData?.data ?? [];
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
@@ -117,38 +113,11 @@ export default function DoctorProfilePage() {
       </div>
 
       <div className="mt-10">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5 text-indigo-600" />
-          <h2 className="text-lg font-bold text-slate-900">Patient reviews</h2>
-        </div>
-        <div className="mt-5 space-y-4">
-          {reviewsLoading ? (
-            <div className="py-8 text-center">
-              <Spinner label="Loading reviews..." />
-            </div>
-          ) : reviews.length === 0 ? (
-            <EmptyState title="No reviews yet" message="Be the first to review this doctor after your visit." />
-          ) : (
-            reviews.map((r) => {
-              const author = r.patient?.fullName ?? r.author ?? 'Anonymous';
-              return (
-                <div key={r.id} className="card p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={author} size="sm" />
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">{author}</p>
-                        <p className="text-xs text-slate-400">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}</p>
-                      </div>
-                    </div>
-                    <StarRating value={r.rating} />
-                  </div>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{r.comment}</p>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <ScheduleTable doctorId={id} />
+      </div>
+
+      <div className="mt-10">
+        <ReviewList doctorId={id} />
       </div>
     </div>
   );

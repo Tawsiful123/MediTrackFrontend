@@ -1,10 +1,11 @@
-import { NavLink } from 'react-router-dom';
-import { LogOut, X } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { LogOut, X, KeyRound } from 'lucide-react';
 import { useAuth } from '@/features/auth/useAuth';
 import Avatar from '@/components/common/Avatar';
 
 export default function Sidebar({ items = [], open, onClose, onLogout, loggingOut = false }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const roleLabel = (user?.role ?? 'USER').toLowerCase().replace('_', ' ');
 
   return (
@@ -84,6 +85,16 @@ export default function Sidebar({ items = [], open, onClose, onLogout, loggingOu
               <p className="truncate text-xs text-slate-400">{roleLabel}</p>
             </div>
           </div>
+          <button
+            onClick={() => {
+              onClose();
+              navigate('/change-password');
+            }}
+            className="mb-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          >
+            <KeyRound className="h-5 w-5 text-slate-400" />
+            Change password
+          </button>
           <button
             onClick={onLogout}
             disabled={loggingOut}

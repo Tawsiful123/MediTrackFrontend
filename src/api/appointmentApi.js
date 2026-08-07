@@ -1,12 +1,12 @@
 import axiosInstance from './axiosInstance';
 
 export async function bookAppointmentRequest(body) {
-  const { data } = await axiosInstance.post('/appointments/book', body);
+  const { data } = await axiosInstance.post('/appointments', body);
   return data;
 }
 
 export async function getMyAppointments(params) {
-  const { data } = await axiosInstance.get('/appointments/mine', { params });
+  const { data } = await axiosInstance.get('/appointments/my', { params });
   return data;
 }
 
@@ -22,5 +22,20 @@ export async function cancelAppointmentRequest(id) {
 
 export async function rescheduleAppointmentRequest({ id, ...body }) {
   const { data } = await axiosInstance.patch(`/appointments/${id}/reschedule`, body);
+  return data;
+}
+
+export async function getAllAppointments(params) {
+  const { data } = await axiosInstance.get('/appointments', { params });
+  return data;
+}
+
+export async function cancelByStaffRequest(id) {
+  const { data } = await axiosInstance.patch(`/appointments/${id}/cancel-by-staff`);
+  return data;
+}
+
+export async function updateAppointmentStatusRequest({ id, status }) {
+  const { data } = await axiosInstance.patch(`/appointments/${id}/status`, { status });
   return data;
 }

@@ -31,20 +31,8 @@ function formFrom(profile) {
 export default function PatientProfilePage() {
   const { data, isLoading, isError, refetch } = usePatientProfile();
   const { mutateAsync: saveProfile, isPending: saving } = useUpdatePatientProfile();
-  const [form, setForm] = useState(null);
 
   const profile = data?.data ?? {};
-
-  if (form === null && data?.data) {
-    setForm(formFrom(profile));
-  }
-
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await saveProfile(form);
-  };
 
   if (isLoading) {
     return (
@@ -67,12 +55,36 @@ export default function PatientProfilePage() {
   return (
     <div>
       <PageHeader title="My profile" subtitle="Manage your personal and medical information." />
+      <ProfileForm profile={profile} saving={saving} onSave={saveProfile} />
 
+      <div className="mt-6 flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+        <p>
+          Your medical information is encrypted and only shared with doctors you book appointments
+          with. You can request deletion at any time.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ProfileForm({ profile, saving, onSave }) {
+  const [form, setForm] = useState(() => formFrom(profile));
+
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await onSave(form);
+  };
+
+  return (
+    <div>
       <div className="card mb-6 flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center">
-        <Avatar name={form?.fullName || 'Patient'} size="lg" className="h-20 w-20 text-2xl" />
+        <Avatar name={form.fullName || 'Patient'} size="lg" className="h-20 w-20 text-2xl" />
         <div className="flex-1">
-          <p className="text-lg font-bold text-slate-900">{form?.fullName || 'Patient'}</p>
-          <p className="text-sm text-slate-500">{form?.email}</p>
+          <p className="text-lg font-bold text-slate-900">{form.fullName || 'Patient'}</p>
+          <p className="text-sm text-slate-500">{form.email}</p>
         </div>
         <span className="badge bg-emerald-100 text-emerald-700">Account verified</span>
       </div>
@@ -82,14 +94,14 @@ export default function PatientProfilePage() {
           <h3 className="text-base font-bold text-slate-900">Personal details</h3>
         </div>
 
-        <Input label="Full name" value={form?.fullName} onChange={set('fullName')} />
-        <Input label="Email" type="email" value={form?.email} onChange={set('email')} disabled />
-        <Input label="Phone" value={form?.phone} onChange={set('phone')} />
-        <Select label="Gender" value={form?.gender} onChange={set('gender')} options={GENDER} placeholder="Select gender" />
-        <Input label="Date of birth" type="date" value={form?.dateOfBirth} onChange={set('dateOfBirth')} />
+        <Input label="Full name" value={form.fullName} onChange={set('fullName')} />
+        <Input label="Email" type="email" value={form.email} onChange={set('email')} disabled />
+        <Input label="Phone" value={form.phone} onChange={set('phone')} />
+        <Select label="Gender" value={form.gender} onChange={set('gender')} options={GENDER} placeholder="Select gender" />
+        <Input label="Date of birth" type="date" value={form.dateOfBirth} onChange={set('dateOfBirth')} />
 
         <div className="sm:col-span-2">
-          <Input label="Address" value={form?.address} onChange={set('address')} />
+          <Input label="Address" value={form.address} onChange={set('address')} />
         </div>
 
         <div className="sm:col-span-2 mt-2">
@@ -97,15 +109,15 @@ export default function PatientProfilePage() {
           <p className="mt-1 text-xs text-slate-400">Only visible to doctors you consult.</p>
         </div>
 
-        <Input label="Blood group" value={form?.bloodGroup} onChange={set('bloodGroup')} placeholder="e.g. O+" />
-        <Input label="Emergency contact" value={form?.emergencyContact} onChange={set('emergencyContact')} />
-        <Input label="Emergency phone" value={form?.emergencyPhone} onChange={set('emergencyPhone')} />
+        <Input label="Blood group" value={form.bloodGroup} onChange={set('bloodGroup')} placeholder="e.g. O+" />
+        <Input label="Emergency contact" value={form.emergencyContact} onChange={set('emergencyContact')} />
+        <Input label="Emergency phone" value={form.emergencyPhone} onChange={set('emergencyPhone')} />
 
         <div className="sm:col-span-2">
-          <TextArea label="Allergies" rows={2} value={form?.allergies} onChange={set('allergies')} placeholder="List any allergies" />
+          <TextArea label="Allergies" rows={2} value={form.allergies} onChange={set('allergies')} placeholder="List any allergies" />
         </div>
         <div className="sm:col-span-2">
-          <TextArea label="Medical history" rows={3} value={form?.medicalHistory} onChange={set('medicalHistory')} placeholder="Chronic conditions, past surgeries..." />
+          <TextArea label="Medical history" rows={3} value={form.medicalHistory} onChange={set('medicalHistory')} placeholder="Chronic conditions, past surgeries..." />
         </div>
 
         <div className="flex justify-end gap-3 sm:col-span-2">
@@ -118,14 +130,6 @@ export default function PatientProfilePage() {
           </Button>
         </div>
       </form>
-
-      <div className="mt-6 flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-        <p>
-          Your medical information is encrypted and only shared with doctors you book appointments
-          with. You can request deletion at any time.
-        </p>
-      </div>
     </div>
   );
 }
