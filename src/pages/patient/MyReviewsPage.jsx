@@ -10,6 +10,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog';
 import EmptyState from '@/components/common/EmptyState';
 import Spinner from '@/components/common/Spinner';
 import ErrorState from '@/components/common/ErrorState';
+import Pagination from '@/components/common/Pagination';
 import { useMyReviews } from '@/hooks/reviews/useMyReviews';
 import { useCreateReview } from '@/hooks/reviews/useCreateReview';
 import { useUpdateReview } from '@/hooks/reviews/useUpdateReview';
@@ -21,7 +22,8 @@ function getDoctorName(r) {
 }
 
 export default function MyReviewsPage() {
-  const { data, isLoading, isError, refetch } = useMyReviews({ limit: 50 });
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError, refetch } = useMyReviews({ page, limit: 10 });
   const { mutateAsync: createReview, isPending: creating } = useCreateReview();
   const { mutateAsync: updateReview, isPending: updating } = useUpdateReview();
   const { mutateAsync: deleteReview, isPending: deleting } = useDeleteReview();
@@ -127,6 +129,12 @@ export default function MyReviewsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {!isLoading && !isError && reviews.length > 0 && (
+        <div className="mt-8">
+          <Pagination meta={result.meta} page={page} onChange={setPage} />
         </div>
       )}
 

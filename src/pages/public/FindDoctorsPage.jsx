@@ -38,7 +38,7 @@ export default function FindDoctorsPage() {
 
   const result = data?.data ?? {};
   const doctors = result.doctors ?? result.items ?? result.data ?? [];
-  const totalPages = result.meta?.totalPages ?? result.totalPages ?? 1;
+  const totalPages = result.meta?.totalPages ?? (result.meta?.limit > 0 ? Math.ceil((result.meta?.total ?? 0) / result.meta.limit) : 1);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -103,7 +103,7 @@ export default function FindDoctorsPage() {
           </div>
           {totalPages > 1 && (
             <div className="mt-10">
-              <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+              <Pagination meta={result.meta} page={page} totalPages={totalPages} onChange={setPage} />
             </div>
           )}
         </>

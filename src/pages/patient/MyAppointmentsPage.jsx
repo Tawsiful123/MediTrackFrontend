@@ -7,6 +7,7 @@ import Avatar from '@/components/common/Avatar';
 import EmptyState from '@/components/common/EmptyState';
 import Spinner from '@/components/common/Spinner';
 import ErrorState from '@/components/common/ErrorState';
+import Pagination from '@/components/common/Pagination';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { useMyAppointments } from '@/hooks/appointments/useMyAppointments';
 
@@ -24,8 +25,9 @@ function getSpec(a) {
 
 export default function MyAppointmentsPage() {
   const [tab, setTab] = useState('ALL');
+  const [page, setPage] = useState(1);
   const { data, isLoading, isError, refetch } = useMyAppointments(
-    tab === 'ALL' ? { limit: 50 } : { status: tab, limit: 50 },
+    tab === 'ALL' ? { page, limit: 10 } : { status: tab, page, limit: 10 },
   );
 
   const result = data?.data ?? {};
@@ -48,10 +50,13 @@ export default function MyAppointmentsPage() {
         {TABS.map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
-            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+            onClick={() => {
+              setTab(t);
+              setPage(1);
+            }}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
               tab === t
-                ? 'bg-indigo-600 text-white shadow-md'
+                ? 'bg-brand-gradient text-white shadow-md shadow-indigo-200'
                 : 'bg-white text-slate-600 hover:bg-slate-100'
             }`}
           >
@@ -102,6 +107,12 @@ export default function MyAppointmentsPage() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {!isLoading && !isError && appointments.length > 0 && (
+        <div className="mt-8">
+          <Pagination meta={result.meta} page={page} onChange={setPage} />
         </div>
       )}
     </div>
