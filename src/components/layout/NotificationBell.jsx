@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { useNotifications } from '@/hooks/notifications/useNotifications';
+import { useMarkAsRead } from '@/hooks/notifications/useMarkAsRead';
+import { useMarkAllAsRead } from '@/hooks/notifications/useMarkAllAsRead';
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const { data } = useNotifications({ page: 1, limit: 10 });
-  const notifications = data?.data ?? [];
+  const { mutate: markAsRead } = useMarkAsRead();
+  const { mutate: markAllAsRead, isPending: markingAll } = useMarkAllAsRead();
+
+  const notifications = data?.data?.notifications ?? data?.data?.items ?? data?.data ?? [];
   const unread = notifications.filter((n) => !n.isRead).length;
 
   return (
@@ -30,7 +35,11 @@ export default function NotificationBell() {
             <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
               <span className="text-sm font-bold text-slate-800">Notifications</span>
               {unread > 0 && (
-                <button className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+                <button
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                  disabled={markingAll}
+                  onClick={() => markAllAsRead()}
+                >
                   Mark all read
                 </button>
               )}
@@ -40,15 +49,20 @@ export default function NotificationBell() {
                 <p className="px-3 py-8 text-center text-sm text-slate-400">You're all caught up.</p>
               ) : (
                 notifications.map((n) => (
-                  <div
+                  <button
                     key={n.id}
-                    className={`rounded-xl px-3 py-2.5 text-sm ${
-                      n.isRead ? 'text-slate-500' : 'bg-indigo-50 font-medium text-slate-800'
+                    onClick={() => !n.isRead && markAsRead(n.id)}
+                    className={`block w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${
+                      n.isRead
+                        ? 'text-slate-500'
+                        : 'bg-indigo-50 font-medium text-slate-800 hover:bg-indigo-100'
                     }`}
                   >
                     <p>{n.message}</p>
-                    <p className="mt-0.5 text-xs text-slate-400">{n.createdAt}</p>
-                  </div>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}
+                    </p>
+                  </button>
                 ))
               )}
             </div>

@@ -4,7 +4,10 @@ import { Provider } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { store } from '@/app/store';
+import { bootstrapAuth } from '@/app/bootstrap';
 import './index.css';
+
+bootstrapAuth();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

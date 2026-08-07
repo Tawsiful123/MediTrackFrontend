@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import ProtectedRoute from '@/features/auth/ProtectedRoute';
+import { ROLES } from '@/utils/constants';
 import PublicLayout from '@/layouts/PublicLayout';
 import PatientLayout from '@/layouts/PatientLayout';
 import DoctorLayout from '@/layouts/DoctorLayout';
@@ -16,6 +17,7 @@ import FindDoctorsPage from '@/pages/public/FindDoctorsPage';
 import DoctorProfilePage from '@/pages/public/DoctorProfilePage';
 import NotFoundPage from '@/pages/public/NotFoundPage';
 import ForbiddenPage from '@/pages/public/ForbiddenPage';
+import ChangePasswordPage from '@/pages/public/ChangePasswordPage';
 
 import PatientDashboardPage from '@/pages/patient/PatientDashboardPage';
 import PatientProfilePage from '@/pages/patient/PatientProfilePage';
@@ -67,12 +69,13 @@ export const router = createBrowserRouter([
       { path: '/doctors', element: <FindDoctorsPage /> },
       { path: '/doctors/:id', element: <DoctorProfilePage /> },
       { path: '/forbidden', element: <ForbiddenPage /> },
+      { path: '/change-password', element: <ChangePasswordPage /> },
     ],
   },
   {
     path: '/patient',
     element: (
-      <ProtectedRoute allowedRoles={['PATIENT']}>
+      <ProtectedRoute allowedRoles={[ROLES.PATIENT]}>
         <PatientLayout />
       </ProtectedRoute>
     ),
@@ -93,7 +96,7 @@ export const router = createBrowserRouter([
   {
     path: '/doctor',
     element: (
-      <ProtectedRoute allowedRoles={['DOCTOR']}>
+      <ProtectedRoute allowedRoles={[ROLES.DOCTOR]}>
         <DoctorLayout />
       </ProtectedRoute>
     ),
@@ -112,7 +115,7 @@ export const router = createBrowserRouter([
   {
     path: '/assistant',
     element: (
-      <ProtectedRoute allowedRoles={['DOCTOR_ASSISTANT']}>
+      <ProtectedRoute allowedRoles={[ROLES.DOCTOR_ASSISTANT]}>
         <AssistantLayout />
       </ProtectedRoute>
     ),
@@ -130,7 +133,7 @@ export const router = createBrowserRouter([
   {
     path: '/admin',
     element: (
-      <ProtectedRoute allowedRoles={['ADMIN']}>
+      <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
         <AdminLayout />
       </ProtectedRoute>
     ),

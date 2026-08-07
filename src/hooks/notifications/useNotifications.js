@@ -1,10 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance from '@/api/axiosInstance';
-
-export async function getNotifications({ page = 1, limit = 10 } = {}) {
-  const { data } = await axiosInstance.get('/notifications', { params: { page, limit } });
-  return data;
-}
+import { getNotifications } from '@/api/notificationApi';
 
 export function useNotifications(params) {
   return useQuery({

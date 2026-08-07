@@ -1,12 +1,13 @@
 import { SlidersHorizontal } from 'lucide-react';
 import Select from '@/components/common/Select';
 
-const specializations = [
-  'Cardiology', 'Dermatology', 'Neurology', 'Orthopedics',
-  'Pediatrics', 'General Medicine', 'Gynecology', 'Ophthalmology',
-];
-
-export default function DoctorFilterBar({ filters, onChange }) {
+export default function DoctorFilterBar({ filters, onChange, specializations = [] }) {
+  const specOptions = specializations.length
+    ? specializations
+    : [
+        'Cardiology', 'Dermatology', 'Neurology', 'Orthopedics',
+        'Pediatrics', 'General Medicine', 'Gynecology', 'Ophthalmology',
+      ];
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-2 text-slate-500">
@@ -18,7 +19,7 @@ export default function DoctorFilterBar({ filters, onChange }) {
           placeholder="All specializations"
           value={filters.specialization}
           onChange={(e) => onChange({ specialization: e.target.value })}
-          options={specializations}
+          options={specOptions}
         />
       </div>
       <div className="w-40">

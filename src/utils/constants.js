@@ -19,6 +19,9 @@ export const WEEKDAYS = [
   'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY',
 ];
 
+/**
+ * Badge color mapping used by <Badge /> and <AppointmentStatusBadge /> (planning.md §12).
+ */
 export const STATUS_COLORS = {
   PENDING: 'yellow',
   CONFIRMED: 'blue',
@@ -35,3 +38,10 @@ export const STATUS_COLORS = {
   SUSPENDED: 'red',
   APPROVED: 'green',
 };
+
+/**
+ * Resolve a status (or role) to its badge color, defaulting to gray.
+ */
+export function getStatusColor(status) {
+  return STATUS_COLORS[status] ?? 'gray';
+}

@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/features/auth/useAuth';
-import { roleRedirect } from '@/utils/roleRedirect';
+import { getRedirectPath } from '@/utils/roleRedirect';
 
 /**
  * Guards a route tree by authentication + role.
@@ -25,7 +25,7 @@ export default function ProtectedRoute({ allowedRoles = [], children }) {
   }
 
   if (location.pathname === '/login') {
-    return <Navigate to={roleRedirect[role] ?? '/'} replace />;
+    return <Navigate to={getRedirectPath(role)} replace />;
   }
 
   return children;

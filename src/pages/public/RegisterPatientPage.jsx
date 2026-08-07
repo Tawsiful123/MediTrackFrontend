@@ -4,21 +4,26 @@ import { Link, useNavigate } from 'react-router-dom';
 import { HeartPulse, User, Mail, Lock, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { registerPatientSchema } from '@/validations/authValidation';
+import { useRegisterPatient } from '@/hooks/auth/useRegisterPatient';
 
 export default function RegisterPatientPage() {
+  const { mutateAsync: registerPatient, isPending } = useRegisterPatient();
   const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm({ resolver: zodResolver(registerPatientSchema) });
 
   const onSubmit = async (values) => {
-    // TODO: wire to POST /auth/register/patient (useRegisterPatient)
-    console.log('register patient', values);
-    toast.success('Account created! Please check your email to verify.');
-    navigate('/login');
+    try {
+      await registerPatient(values);
+      toast.success('Account created! Please sign in to continue.');
+      navigate('/login');
+    } catch {
+      // error toast is handled by the mutation layer
+    }
   };
 
   const field = {
@@ -29,6 +34,7 @@ export default function RegisterPatientPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-gradient px-4 py-12">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_50%)]" />
       <div className="relative w-full max-w-md">
         <div className="card p-8 shadow-2xl sm:p-10">
           <div className="flex flex-col items-center text-center">
@@ -76,8 +82,8 @@ export default function RegisterPatientPage() {
               {errors.phone && <p className="mt-1 text-xs font-medium text-rose-600">{errors.phone.message}</p>}
             </div>
 
-            <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-3">
-              {isSubmitting ? 'Creating account...' : 'Create account'}
+            <button type="submit" disabled={isPending} className="btn-primary w-full py-3">
+              {isPending ? 'Creating account...' : 'Create account'}
             </button>
           </form>
 

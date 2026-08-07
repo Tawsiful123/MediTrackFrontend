@@ -1,3 +1,5 @@
+import { getStatusColor } from '@/utils/constants';
+
 const colors = {
   yellow: 'bg-yellow-100 text-yellow-800',
   blue: 'bg-blue-100 text-blue-800',
@@ -8,7 +10,7 @@ const colors = {
 };
 
 export default function Badge({ status = '', className = '', children }) {
-  const color = colors[status?.toLowerCase()] ?? colors.gray;
+  const color = colors[getStatusColor(status)] ?? colors.gray;
   return (
     <span className={`badge ${color} ${className}`}>{children || status}</span>
   );

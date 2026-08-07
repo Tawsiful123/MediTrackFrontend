@@ -4,22 +4,29 @@ import { Link } from 'react-router-dom';
 import { Mail, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { forgotPasswordSchema } from '@/validations/authValidation';
+import { useForgotPassword } from '@/hooks/auth/useForgotPassword';
 
 export default function ForgotPasswordPage() {
+  const { mutateAsync: forgotPassword, isPending } = useForgotPassword();
+
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm({ resolver: zodResolver(forgotPasswordSchema) });
 
   const onSubmit = async (values) => {
-    // TODO: wire to POST /auth/forgot-password (useForgotPassword)
-    console.log('forgot password', values);
-    toast.success('If that email exists, a reset link is on its way.');
+    try {
+      await forgotPassword(values);
+      toast.success('If that email exists, a reset link is on its way.');
+    } catch {
+      // error toast is handled by the mutation layer
+    }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-gradient px-4 py-12">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_50%)]" />
       <div className="relative w-full max-w-md">
         <div className="card p-8 shadow-2xl sm:p-10">
           <div className="flex flex-col items-center text-center">
@@ -47,8 +54,8 @@ export default function ForgotPasswordPage() {
               {errors.email && <p className="mt-1 text-xs font-medium text-rose-600">{errors.email.message}</p>}
             </div>
 
-            <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-3">
-              {isSubmitting ? 'Sending...' : 'Send reset link'}
+            <button type="submit" disabled={isPending} className="btn-primary w-full py-3">
+              {isPending ? 'Sending...' : 'Send reset link'}
             </button>
           </form>
 

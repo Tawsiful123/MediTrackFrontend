@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { HeartPulse, Menu, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/useAuth';
-import { roleRedirect } from '@/utils/roleRedirect';
+import { getRedirectPath } from '@/utils/roleRedirect';
 
 const links = [
   { to: '/', label: 'Home' },
@@ -14,7 +14,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const dashboardPath = roleRedirect[role] ?? '/login';
+  const dashboardPath = getRedirectPath(role) === '/' ? '/login' : getRedirectPath(role);
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur-lg">

@@ -4,30 +4,36 @@ import { Link, useNavigate } from 'react-router-dom';
 import { HeartPulse, User, Mail, Lock, Phone, Building2, MapPin, Banknote } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { registerDoctorSchema } from '@/validations/authValidation';
-
-const specializations = [
-  'Cardiology', 'Dermatology', 'Neurology', 'Orthopedics',
-  'Pediatrics', 'General Medicine', 'Gynecology', 'Ophthalmology',
-];
+import { useRegisterDoctor } from '@/hooks/auth/useRegisterDoctor';
+import { useSpecializations } from '@/hooks/specializations/useSpecializations';
+import Spinner from '@/components/common/Spinner';
 
 export default function RegisterDoctorPage() {
+  const { mutateAsync: registerDoctor, isPending } = useRegisterDoctor();
+  const { data: specData, isLoading: specsLoading } = useSpecializations();
   const navigate = useNavigate();
+
+  const specializations = specData?.data ?? [];
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm({ resolver: zodResolver(registerDoctorSchema) });
 
   const onSubmit = async (values) => {
-    // TODO: wire to POST /auth/register/doctor (useRegisterDoctor)
-    console.log('register doctor', values);
-    toast.success('Application submitted! Our team will review it shortly.');
-    navigate('/login');
+    try {
+      await registerDoctor(values);
+      toast.success('Application submitted! Our team will review it shortly.');
+      navigate('/login');
+    } catch {
+      // error toast is handled by the mutation layer
+    }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-gradient px-4 py-12">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.15),transparent_50%)]" />
       <div className="relative w-full max-w-lg">
         <div className="card p-8 shadow-2xl sm:p-10">
           <div className="flex flex-col items-center text-center">
@@ -80,13 +86,28 @@ export default function RegisterDoctorPage() {
 
             <div>
               <label className="label">Specialization</label>
-              <select className={`input ${errors.specializationId ? 'border-rose-400' : ''}`} {...register('specializationId')}>
-                <option value="">Select your specialization</option>
-                {specializations.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-              {errors.specializationId && <p className="mt-1 text-xs font-medium text-rose-600">{errors.specializationId.message}</p>}
+              {specsLoading ? (
+                <div className="input flex items-center gap-2 text-slate-400">
+                  <Spinner size="sm" label="Loading specializations..." />
+                </div>
+              ) : (
+                <>
+                  <select
+                    className={`input ${errors.specializationId ? 'border-rose-400' : ''}`}
+                    {...register('specializationId')}
+                  >
+                    <option value="">Select your specialization</option>
+                    {specializations.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.specializationId && (
+                    <p className="mt-1 text-xs font-medium text-rose-600">{errors.specializationId.message}</p>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -115,8 +136,8 @@ export default function RegisterDoctorPage() {
               </div>
             </div>
 
-            <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-3">
-              {isSubmitting ? 'Submitting...' : 'Submit application'}
+            <button type="submit" disabled={isPending} className="btn-primary w-full py-3">
+              {isPending ? 'Submitting...' : 'Submit application'}
             </button>
           </form>
 

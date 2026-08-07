@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { loginSchema } from '@/validations/authValidation';
 import { useLogin } from '@/hooks/auth/useLogin';
 import { useAuth } from '@/features/auth/useAuth';
-import { roleRedirect } from '@/utils/roleRedirect';
+import { getRedirectPath } from '@/utils/roleRedirect';
 
 export default function LoginPage() {
   const { mutateAsync: login, isPending } = useLogin();
@@ -30,7 +30,8 @@ export default function LoginPage() {
       if (needsPasswordChange) {
         navigate('/change-password');
       } else {
-        navigate(roleRedirect[user.role] ?? from);
+        const dest = getRedirectPath(user.role);
+        navigate(dest === '/' ? from : dest);
       }
     } catch {
       // error toast is handled by the mutation layer

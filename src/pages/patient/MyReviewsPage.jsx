@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
 import PageHeader from '@/components/common/PageHeader';
 import Button from '@/components/common/Button';
 import Avatar from '@/components/common/Avatar';
@@ -9,14 +8,27 @@ import Modal from '@/components/common/Modal';
 import TextArea from '@/components/common/TextArea';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 import EmptyState from '@/components/common/EmptyState';
+import Spinner from '@/components/common/Spinner';
+import ErrorState from '@/components/common/ErrorState';
+import { useMyReviews } from '@/hooks/reviews/useMyReviews';
+import { useCreateReview } from '@/hooks/reviews/useCreateReview';
+import { useUpdateReview } from '@/hooks/reviews/useUpdateReview';
+import { useDeleteReview } from '@/hooks/reviews/useDeleteReview';
 
-const initial = [
-  { id: 1, doctor: 'Dr. Ayesha Siddiqui', spec: 'Cardiology', date: 'Mar 12, 2026', rating: 5, comment: 'Excellent doctor, very thorough and kind.' },
-  { id: 2, doctor: 'Dr. John Carter', spec: 'Dermatology', date: 'Jan 05, 2026', rating: 4, comment: 'Good experience overall.' },
-];
+function getDoctorName(r) {
+  if (!r.doctor) return 'Doctor';
+  return typeof r.doctor === 'string' ? r.doctor : r.doctor.fullName ?? 'Doctor';
+}
 
 export default function MyReviewsPage() {
-  const [reviews, setReviews] = useState(initial);
+  const { data, isLoading, isError, refetch } = useMyReviews({ limit: 50 });
+  const { mutateAsync: createReview, isPending: creating } = useCreateReview();
+  const { mutateAsync: updateReview, isPending: updating } = useUpdateReview();
+  const { mutateAsync: deleteReview, isPending: deleting } = useDeleteReview();
+
+  const result = data?.data ?? {};
+  const reviews = result.reviews ?? result.items ?? result.data ?? [];
+
   const [editing, setEditing] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -33,25 +45,41 @@ export default function MyReviewsPage() {
   const openEdit = (r) => {
     setEditing(r);
     setRating(r.rating);
-    setComment(r.comment);
+    setComment(r.comment ?? '');
     setModalOpen(true);
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (editing) {
-      setReviews((list) => list.map((r) => (r.id === editing.id ? { ...r, rating, comment } : r)));
-      toast.success('Review updated');
+      await updateReview({ id: editing.id, rating, comment });
     } else {
-      toast.success('Review submitted');
+      await createReview({ rating, comment, doctorId: editing?.doctorId });
     }
     setModalOpen(false);
   };
 
-  const confirmDelete = () => {
-    setReviews((list) => list.filter((r) => r.id !== deleteTarget.id));
-    toast.success('Review deleted');
+  const confirmDelete = async () => {
+    await deleteReview(deleteTarget.id);
     setDeleteTarget(null);
   };
+
+  if (isLoading) {
+    return (
+      <div className="py-24 text-center">
+        <Spinner label="Loading reviews..." />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <ErrorState
+        title="Could not load reviews"
+        message="Something went wrong while fetching your reviews."
+        onRetry={refetch}
+      />
+    );
+  }
 
   return (
     <div>
@@ -77,10 +105,13 @@ export default function MyReviewsPage() {
             <div key={r.id} className="card p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <Avatar name={r.doctor} />
+                  <Avatar name={getDoctorName(r)} />
                   <div>
-                    <p className="font-bold text-slate-900">{r.doctor}</p>
-                    <p className="text-xs text-slate-400">{r.spec} · {r.date}</p>
+                    <p className="font-bold text-slate-900">{getDoctorName(r)}</p>
+                    <p className="text-xs text-slate-400">
+                      {r.specialization?.name ?? ''}
+                      {r.createdAt ? ` · ${new Date(r.createdAt).toLocaleDateString()}` : ''}
+                    </p>
                   </div>
                 </div>
                 <StarRating value={r.rating} />
@@ -106,7 +137,9 @@ export default function MyReviewsPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={submit}>{editing ? 'Save' : 'Submit'}</Button>
+            <Button onClick={submit} loading={creating || updating} disabled={rating < 1}>
+              {editing ? 'Save' : 'Submit'}
+            </Button>
           </>
         }
       >
@@ -127,6 +160,7 @@ export default function MyReviewsPage() {
         title="Delete review"
         message="This review will be permanently removed."
         confirmLabel="Delete"
+        loading={deleting}
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
       />

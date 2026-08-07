@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import {
   Menu, LayoutDashboard, ShieldCheck, Users, UserCog,
   MessageSquare, Tags, BarChart3, User,
 } from 'lucide-react';
 import Sidebar from '@/components/layout/Sidebar';
 import NotificationBell from '@/components/layout/NotificationBell';
-import { useAuth } from '@/features/auth/useAuth';
+import { useLogout } from '@/hooks/auth/useLogout';
 
 const navItems = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -21,12 +21,10 @@ const navItems = [
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate = useNavigate();
-  const { logout } = useAuth();
+  const logoutMutation = useLogout();
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    logoutMutation.mutate();
   };
 
   return (
